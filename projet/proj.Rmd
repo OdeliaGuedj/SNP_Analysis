@@ -1,0 +1,93 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+# Lecture des données
+```{r}
+data = read.table("GSE53626_series_matrix2.txt", sep='\t', header=T, comment.char="!", row.names=1, na.string="NC")
+```
+```{r}
+nationality = as.factor(t(read.table("GSE53626_series_matrix2.txt", skip=42, nrows=1))[-1])
+table(nationality)
+#names(nationality)
+#names(nationality) = c("Bulgarian", "East-Sicilian", "Greek", "Moroccan", "Norweigian", "Polish","South-Italian", "Spanish", "Tunisian", "UAE", "West-Sicilian")
+length(nationality)
+unlist(nationality)
+```
+```{r}
+library(stringr)
+natio = as.factor(unlist(lapply(nationality, str_sub, 14)))
+table(natio)
+```
+
+
+```{r}
+sexe = as.factor(t(read.table("GSE53626_series_matrix2.txt", skip=41, nrows=1))[-1])
+table(sexe)
+length(sexe)
+```
+
+# Gestion des données manquantes
+```{r}
+data2 = data[rowSums(is.na(data)) == 0, ]
+```
+
+# ACP
+```{r}
+library(FactoMineR)
+```
+```{r}
+res.pca = PCA(X = t(data2))
+```
+
+```{r}
+library(factoextra)
+```
+
+```{r}
+ind = get_pca_ind(res.pca)
+```
+
+```{r}
+data_ind = ind$coord[,1:2]
+data_ind = cbind(data_ind, natio)
+```
+
+
+```{r}
+library(ggplot2)
+
+data_ind = as.data.frame(data_ind)
+ggplot(data_ind, aes(x = data_ind[,1],y = data_ind[,2], colour = factor(data_ind[,3]))) + geom_point() +  scale_color_manual(name="Nationalités", labels = c("Bulgarian", "East-Sicilian", "Greek", "Moroccan", "Norwegian", "Polish", "South-Italian", "Spanish", "Tunisian", "UAE", "West-Sicilian"), values = rainbow(11)) + xlab("Dim.1") + ylab("Dim.2")
+                       
+```
+```{r}
+var <- get_pca_var(res.pca)
+```
+
+
+```{r}
+# Contributions des variables à PC1
+fviz_contrib(res.pca, choice = "var", axes = 1, top = 500)
+# Contributions des variables à PC2
+fviz_contrib(res.pca, choice = "var", axes = 2, top = 500)
+```
+
+# Clustering: k-means
+
+
+```{r}
+res.kmeans = kmeans(x = t(data2), centers = 11)
+```
+
+```{r}
+library(cowplot)
+plot_grid(
+ggplot(data_ind, aes(x = data_ind[,1],y = data_ind[,2])) + geom_point(colour = factor(data_ind[,3])) + xlab("Dim.1") + ylab("Dim.2") + ggtitle("Groupes nationality"),
+ggplot(data_ind, aes(x = data_ind[,1],y = data_ind[,2])) + geom_point(colour = factor(res.kmeans$cluster))  + xlab("Dim.1") + ylab("Dim.2") + ggtitle("Groupes kmeans"))
+```
+
+

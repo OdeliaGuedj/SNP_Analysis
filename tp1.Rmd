@@ -1,0 +1,17 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+data = read.table("C:/Users/odeli/Desktop/statisticsForGeneticsAndGenomics_M2/data/data_matrix.txt", header = T, sep = "\t", row.names = 1)
+```
+
+```{r}
+library(dplyr)
+glimpse(data)
+```
+```{r}
+names(data)
+```
+

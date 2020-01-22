@@ -1,0 +1,4 @@
+FAQ: https://www.well.ox.ac.uk/~gav/admixture/2014-science-final/resources/FAQ.pdf
+results: http://www.admixturemap.paintmychromosomes.com/
+
+Ajouter la variable qui donne le groupe de pop

@@ -1,0 +1,154 @@
+---
+title: "Statistics for Genetics and Genomics - TP1"
+author: "Marcoux Pépin T."
+output: html_document
+---
+
+```{r}
+library(CAST)
+library(SKAT)
+```
+
+
+# TP4
+
+```{r}
+Z = t(as.matrix(read.table("D:/Documents/Statistics for Genetics and Genomics/TP4/Gene1.txt", head=F))) # genotype matrix (1000 samples,)
+y = unlist((read.table("D:/Documents/Statistics for Genetics and Genomics/TP4/Trait1.txt")))
+dim(Z)
+length(y)
+```
+
+### 1
+```{r}
+maf.calc <- function(vsnp){
+  vsnp = na.omit(unlist(vsnp))
+  fA = (2*sum(vsnp==0)+sum(vsnp==1)/(2*length(vsnp)))
+  res = min(fA, 1-fA)
+  return(res)
+}
+```
+```{r}
+maf2 = apply(Z, 1, maf.calc)
+maf = pmin(apply(Z,1,mean)/2, 1-apply(Z,1,mean)/2)
+hist(maf,nclass=50)
+hist(maf[which(maf<0.5)])
+sum(maf<0.05)
+```
+
+### 2
+```{r}
+hist(y)
+```
+```{r}
+my_fct = function(snp){
+  res = summary(lm(y~snp))$coefficient[2,4]
+  return(res)
+}
+
+vpval = apply(Z,1,my_fct)
+hist(vpval, nclass=10)
+```
+```{r}
+sum(p.adjust(vpval, method="BH")<=0.05)
+res2 = summary(lm(y~t(Z)))
+vpval2 = (res2$coefficient[,4])[-1]
+sum(p.adjust(vpval2, method="BH")<=0.05)
+```
+
+```{r}
+### Manhattan plot
+plot(1:50, -log(vpval,10))
+
+library(GWASTools)
+manhattanPlot(p=vpval, chromosome=1:50, main="Association Results for Trait1")
+```
+
+
+### 3
+```{r}
+rvs = which(maf<0.03)
+
+### CAST: Binary collapsing
+C = as.numeric(apply(Z[rvs,],2,sum)>0)
+summary(lm(y~C))
+```
+
+```{r}
+### MZ Test
+C = apply(apply(Z[rvs,],1,pmin,1),1,sum)
+summary(lm(y~C))
+```
+
+```{r}
+### Weighted Count
+weights = 1/sqrt(maf[rvs])
+C = as.vector(weights%*%Z[rvs,])
+summary(lm(y~C))
+```
+
+```{r}
+weigths = (1/maf[rvs])^2 ## alternative weigths
+C = as.vector(weights%*%Z[rvs,])
+summary(lm(y~C))
+```
+
+```{r}
+### SWAT
+obj = SKAT_Null_Model(y~1, out_type="C") ## Calculates the NULL model, i.e. without variant
+```
+```{r}
+### standard version of SKAT
+SKAT(t(Z[rvs,]), obj)
+```
+```{r}
+### omnibus version of SKAT with several diffrent rho values
+SKAT(t(Z[rvs,]), obj, r.corr=0)$p.value ## same as running SKAT
+SKAT(t(Z[rvs,]), obj, r.corr=1)$p.value ## same as weighted count collapsing
+SKAT(t(Z[rvs,]), obj, r.corr=0.5)$p.value ## somehing in beween
+```
+```{r}
+### omnibus version of SKAT with "optimal" rho value
+SKAT(t(Z[rvs,]), obj, method="optimal")$p.value 
+SKAT(t(Z[rvs,]), obj, method="optimal.adj")$p.value ## slightly better type I error control in the tails
+
+```
+
+## 4.
+
+```{r}
+Z = t(as.matrix(read.table("Gene2.txt", header=F)))
+
+maf = pmin(apply(Z,1,mean)/2, 1-apply(Z,1,mean)/2)
+hist(maf, nclass=50)
+hist(maf[which(maf<0.05)])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
